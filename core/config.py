@@ -2,7 +2,7 @@ from PyQt6.QtGui import QColor
 
 class Config:
     APP_NAME = "KaBlackSmith"
-    VERSION = "v1.5.0"
+    VERSION = "v1.0.0"
     
     # UI Dimensions
     WINDOW_WIDTH = 1280
