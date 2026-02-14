@@ -35,8 +35,11 @@ class RouteCard(QFrame):
     def __init__(self, route_id, route_info):
         super().__init__()
         self.setObjectName("RouteCard"); self.setFixedSize(220, 150); self.setCursor(Qt.CursorShape.PointingHandCursor)
-        grade = route_info["grade"]; levels = route_info["levels"]; max_lv = max([int(k) for k in levels.keys()])
-        highest_name = levels[str(max_lv)]; progress = (len(levels) / 21) * 100; color = Config.COLOR_ACCENT if grade == "희귀" else "#888"
+        grade = route_info["grade"]; levels = route_info["levels"]
+        l_keys = [int(k) for k in levels.keys()]
+        max_lv = max(l_keys) if l_keys else 0
+        highest_name = levels.get(str(max_lv), "Unknown")
+        progress = (len(levels) / 21) * 100; color = Config.COLOR_ACCENT if grade == "희귀" else "#888"
         self.normal_style = f"QFrame#RouteCard {{ background-color: rgba(255, 255, 255, 0.03); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 20px; }}"
         self.hover_style = f"QFrame#RouteCard {{ background-color: rgba(255, 255, 255, 0.06); border: 1px solid {color}; border-radius: 20px; }}"
         self.press_style = f"QFrame#RouteCard {{ background-color: rgba(0, 0, 0, 0.2); border: 1px solid {color}; border-radius: 20px; }}"
@@ -131,18 +134,11 @@ class KaBlackSmithDashboard(QMainWindow):
         for b_txt, cb in [("—", self.showMinimized), ("✕", self.close)]:
             b = QPushButton(b_txt); b.setFixedSize(32, 32); b.setStyleSheet("QPushButton { color: #555; border: none; background: transparent; font-size: 14px; } QPushButton:hover { color: white; }"); b.clicked.connect(cb); tb_layout.addWidget(b)
         content_layout.addWidget(title_bar); self.stack = QStackedWidget()
-        
-        # PAGE 0: SMITHY (Layout Expanded)
-        page_smithy = QWidget(); smithy_layout = QVBoxLayout(page_smithy); smithy_layout.setContentsMargins(0, 0, 0, 0)
-        header = QFrame(); header.setFixedHeight(140); header.setStyleSheet("background: transparent; border-bottom: 1px solid #222;"); h_layout = QHBoxLayout(header); h_layout.setContentsMargins(50, 0, 50, 0); title_box = QVBoxLayout(); title_box.setSpacing(5); title_box.setAlignment(Qt.AlignmentFlag.AlignVCenter); h_title = QLabel("검 키우기"); h_title.setStyleSheet("color: white; border: none; font-size: 32px; font-weight: 800;"); info_row = QHBoxLayout(); info_row.setSpacing(25); self.badge_weapon = StatText("보유 무기 없음", Config.COLOR_ACCENT); self.badge_gold = StatText("0 G", "#FFD700"); self.badge_status = StatText("대기 중", "#888"); info_row.addWidget(self.badge_weapon); info_row.addWidget(self.badge_gold); info_row.addWidget(self.badge_status); info_row.addStretch(); title_box.addWidget(h_title); title_box.addLayout(info_row); h_layout.addLayout(title_box); h_layout.addStretch(); self.btn_run = RunButton(); self.btn_run.clicked.connect(self.handle_run); h_layout.addWidget(self.btn_run); smithy_layout.addWidget(header)
-        
-        # [BODY] - 100% width settings area
+        page_smithy = QWidget(); smithy_layout = QVBoxLayout(page_smithy); smithy_layout.setContentsMargins(0, 0, 0, 0); header = QFrame(); header.setFixedHeight(140); header.setStyleSheet("background: transparent; border-bottom: 1px solid #222;"); h_layout = QHBoxLayout(header); h_layout.setContentsMargins(50, 0, 50, 0); title_box = QVBoxLayout(); title_box.setSpacing(5); title_box.setAlignment(Qt.AlignmentFlag.AlignVCenter); h_title = QLabel("검 키우기"); h_title.setStyleSheet("color: white; border: none; font-size: 32px; font-weight: 800;"); info_row = QHBoxLayout(); info_row.setSpacing(25); self.badge_weapon = StatText("보유 무기 없음", Config.COLOR_ACCENT); self.badge_gold = StatText("0 G", "#FFD700"); self.badge_status = StatText("대기 중", "#888"); info_row.addWidget(self.badge_weapon); info_row.addWidget(self.badge_gold); info_row.addWidget(self.badge_status); info_row.addStretch(); title_box.addWidget(h_title); title_box.addLayout(info_row); h_layout.addLayout(title_box); h_layout.addStretch(); self.btn_run = RunButton(); self.btn_run.clicked.connect(self.handle_run); h_layout.addWidget(self.btn_run); smithy_layout.addWidget(header)
         body_container = QWidget(); body_layout = QHBoxLayout(body_container); body_layout.setContentsMargins(50, 20, 50, 30); body_layout.setSpacing(0)
         settings_scroll = QScrollArea(); settings_content = QWidget(); settings_content.setStyleSheet("background: transparent;"); set_vbox = QVBoxLayout(settings_content); set_vbox.setContentsMargins(0, 0, 20, 0); set_vbox.setSpacing(15); set_vbox.addWidget(SectionHeader("봇 운용 전략")); self.toggle_mode = SegmentedControl(["골드 수급", "자동 강화"]); self.toggle_mode.currentIndexChanged.connect(self.switch_settings_mode); set_vbox.addWidget(ModItem("실행 모드 선택", self.toggle_mode)); self.setting_stack = QStackedWidget(); self.setting_stack.setStyleSheet("background: transparent;")
         p_gold = QWidget(); gl = QVBoxLayout(p_gold); gl.setContentsMargins(0,0,0,0); gl.setSpacing(15); gl.addWidget(SectionHeader("경제적 목표 설정")); self.edit_target_gold = QLineEdit("1,000,000,000"); gl.addWidget(ModItem("목표 골드 보유량", self.edit_target_gold)); self.spin_sell = QSpinBox(); self.spin_sell.setRange(1, 20); self.spin_sell.setValue(10); gl.addWidget(ModItem("판매 임계 레벨", self.spin_sell)); gl.addStretch(); self.setting_stack.addWidget(p_gold)
-        p_auto = QWidget(); al = QVBoxLayout(p_auto); al.setContentsMargins(0,0,0,0); al.setSpacing(15); al.addWidget(SectionHeader("자금 및 강화 규칙")); self.edit_start_fund = QLineEdit("50,000,000"); al.addWidget(ModItem("강화 시작 골드", self.edit_start_fund)); self.edit_min_fund = QLineEdit("10,000,000"); al.addWidget(ModItem("최소 보유 금액", self.edit_min_fund)); self.toggle_grade = SegmentedControl(["전체", "일반", "레어"]); al.addWidget(ModItem("무기 등급 필터", self.toggle_grade)); self.spin_target = QSpinBox(); self.spin_target.setRange(1, 20); self.spin_target.setValue(10); al.addWidget(ModItem("目標 강화 레벨", self.spin_target)); self.toggle_collect = ToggleSwitch(); al.addWidget(ModItem("완료된 컬렉션 제외", self.toggle_collect)); al.addStretch(); self.setting_stack.addWidget(p_auto); set_vbox.addWidget(self.setting_stack); set_vbox.addStretch(); settings_scroll.setWidget(settings_content); settings_scroll.setWidgetResizable(True); body_layout.addWidget(settings_scroll)
-        smithy_layout.addWidget(body_container); self.stack.addWidget(page_smithy)
-
+        p_auto = QWidget(); al = QVBoxLayout(p_auto); al.setContentsMargins(0,0,0,0); al.setSpacing(15); al.addWidget(SectionHeader("자금 및 강화 규칙")); self.edit_start_fund = QLineEdit("50,000,000"); al.addWidget(ModItem("강화 시작 골드", self.edit_start_fund)); self.edit_min_fund = QLineEdit("10,000,000"); al.addWidget(ModItem("최소 보유 금액", self.edit_min_fund)); self.toggle_grade = SegmentedControl(["전체", "일반", "레어"]); al.addWidget(ModItem("무기 등급 필터", self.toggle_grade)); self.spin_target = QSpinBox(); self.spin_target.setRange(1, 20); self.spin_target.setValue(10); al.addWidget(ModItem("최종 강화 레벨", self.spin_target)); self.toggle_collect = ToggleSwitch(); al.addWidget(ModItem("완료된 컬렉션 제외", self.toggle_collect)); al.addStretch(); self.setting_stack.addWidget(p_auto); set_vbox.addWidget(self.setting_stack); set_vbox.addStretch(); settings_scroll.setWidget(settings_content); settings_scroll.setWidgetResizable(True); body_layout.addWidget(settings_scroll); smithy_layout.addWidget(body_container); self.stack.addWidget(page_smithy)
         page_ency = QWidget(); ency_layout = QVBoxLayout(page_ency); ency_layout.setContentsMargins(50, 40, 50, 40); ency_header = QHBoxLayout(); ency_header.setSpacing(20); ency_title = QLabel("무기 도감"); ency_title.setStyleSheet("font-size: 28px; font-weight: 800; color: white;"); ency_header.addWidget(ency_title); ency_header.addStretch(); self.progress_container = QWidget(); self.progress_container.setFixedWidth(240); progress_box = QVBoxLayout(self.progress_container); progress_box.setContentsMargins(0, 0, 0, 0); progress_box.setSpacing(5); self.progress_lbl = QLabel("총 수집 계보: 0종"); self.progress_lbl.setStyleSheet("font-size: 11px; color: #888; font-weight: 700;"); self.progress_bar = QProgressBar(); self.progress_bar.setFixedHeight(6); self.progress_bar.setRange(0, 100); self.progress_bar.setValue(0); self.progress_bar.setTextVisible(False); self.progress_bar.setStyleSheet(f"QProgressBar {{ background: rgba(255,255,255,0.05); border: none; border-radius: 3px; }} QProgressBar::chunk {{ background: {Config.COLOR_ACCENT}; border-radius: 3px; }}"); progress_box.addWidget(self.progress_lbl); progress_box.addWidget(self.progress_bar); ency_header.addWidget(self.progress_container); ency_layout.addLayout(ency_header); self.ency_filter = SegmentedControl(["전체 계보", "일반 루트", "희귀 루트", "미분류"]); self.ency_filter.currentIndexChanged.connect(self.on_ency_filter_changed); ency_layout.addSpacing(20); ency_layout.addWidget(self.ency_filter); ency_layout.addSpacing(20); scroll = QScrollArea(); scroll.setWidgetResizable(True); scroll_content = QWidget(); scroll_content.setStyleSheet("background: transparent;"); self.grid_layout = QGridLayout(scroll_content); self.grid_layout.setSpacing(20); self.grid_layout.setAlignment(Qt.AlignmentFlag.AlignTop | Qt.AlignmentFlag.AlignLeft); scroll.setWidget(scroll_content); ency_layout.addWidget(scroll); self.stack.addWidget(page_ency)
         page_analytics = QWidget(); ana_layout = QVBoxLayout(page_analytics); ana_layout.setContentsMargins(50, 40, 50, 40); ana_title = QLabel("데이터 분석 실시간 리포트"); ana_title.setStyleSheet("font-size: 28px; font-weight: 800; color: white; margin-bottom: 25px;"); ana_layout.addWidget(ana_title); summary_h = QHBoxLayout(); summary_h.setSpacing(20); self.card_rare_rate = StatCard("희귀 무기 출현율", "0.0%", "전체 0회 획득 중"); self.card_avg_cost = StatCard("평균 강화 비용", "0 G", "+10강 도달 기준", "#FFD700"); self.card_total_tries = StatCard("전체 강화 시도", "0회", "성공 0 | 유지 0 | 파괴 0", "#FF4757"); summary_h.addWidget(self.card_rare_rate); summary_h.addWidget(self.card_avg_cost); summary_h.addWidget(self.card_total_tries); summary_h.addStretch(); ana_layout.addLayout(summary_h); ana_layout.addSpacing(40); ana_layout.addWidget(SectionHeader("등급별 강화 상세 확률 (실시간 집계)")); self.stats_table = QTableWidget(); self.stats_table.setColumnCount(5); self.stats_table.setHorizontalHeaderLabels(["강화 단계", "등급", "성공률", "파괴율", "평균 비용"]); self.stats_table.setStyleSheet("QTableWidget { background: transparent; border: none; gridline-color: #222; } QHeaderView::section { background: #1A1A1C; color: #666; font-weight: 800; border: none; padding: 10px; }"); self.stats_table.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeMode.Stretch); ana_layout.addWidget(self.stats_table); self.stack.addWidget(page_analytics); content_layout.addWidget(self.stack); main_layout.addWidget(content_wrapper)
 
@@ -187,23 +183,44 @@ class KaBlackSmithDashboard(QMainWindow):
     def show_route_detail(self, rid, info): dialog = RouteDetailDialog(rid, info, self); dialog.exec()
 
     def smart_classify_weapon(self, name, level):
+        """계보 추적 로직 최종 수정: 모든 단계 누락 없이 기록"""
         rid, info = Database.get_route_by_weapon_name(self.db, name)
+        
+        # 1. 0강 무기 (기원 및 등급 판별)
         if level == 0:
             sfx = ["검", "막대", "몽둥이", "도끼", "망치"]
             grade = "일반" if any(name.endswith(s) for s in sfx) else "희귀"
-            self.pending_origin = {"name": name, "grade": grade}; self.active_route_id = None; Database.record_spawn(grade); return
+            self.pending_origin = {"name": name, "grade": grade}
+            self.active_route_id = rid # 이미 아는 루트면 연결
+            Database.record_spawn(grade); return
+
+        # 2. 강화 진행 중 (+1 이상)
         if level > 0:
-            if rid:
-                self.active_route_id = rid; self.db["routes"][rid]["levels"][str(level)] = name
+            target_route_id = rid or self.active_route_id
+            
+            # 케이스 A: 이미 알고 있는 루트의 이름이거나 현재 세션에서 추적 중인 경우
+            if target_route_id:
+                self.active_route_id = target_route_id
+                self.db["routes"][target_route_id]["levels"][str(level)] = name
+                Database.save_all(self.db); self.refresh_encyclopedia_ui()
+            # 케이스 B: 새로운 루트의 탄생 (+1)
             elif self.pending_origin:
-                route_id = name; self.active_route_id = route_id
-                if route_id not in self.db["routes"]: self.db["routes"][route_id] = {"grade": self.pending_origin["grade"], "origin": self.pending_origin["name"], "levels": {"0": self.pending_origin["name"], str(level): name}}
+                route_id = name # +1 이름을 루트 ID로 사용
+                self.active_route_id = route_id
+                if route_id not in self.db["routes"]:
+                    self.db["routes"][route_id] = {"grade": self.pending_origin["grade"], "origin": self.pending_origin["name"], "levels": {"0": self.pending_origin["name"], str(level): name}}
                 else: self.db["routes"][route_id]["levels"][str(level)] = name
                 self.pending_origin = None
-            if name in self.db["unclassified"]: del self.db["unclassified"][name]
-            Database.save_all(self.db); self.refresh_encyclopedia_ui()
-        elif not rid and name not in self.db["unclassified"]:
-            self.db["unclassified"][name] = level; Database.save_all(self.db); self.refresh_encyclopedia_ui()
+                Database.save_all(self.db); self.refresh_encyclopedia_ui()
+            # 케이스 C: 계보를 모르는데 도감에도 없는 새로운 이름 (미분류)
+            elif name not in self.db["unclassified"]:
+                self.db["unclassified"][name] = level
+                Database.save_all(self.db); self.refresh_encyclopedia_ui()
+            
+            # 공통: 미분류 승격 체크
+            if name in self.db["unclassified"]:
+                del self.db["unclassified"][name]
+                Database.save_all(self.db); self.refresh_encyclopedia_ui()
 
     def handle_run(self):
         if self.engine and self.engine.isRunning(): self.engine.stop(); return
@@ -231,6 +248,8 @@ class KaBlackSmithDashboard(QMainWindow):
         if match: level = int(match.group(1)); name = re.sub(r'\[?\+?\d+\]?\s*', '', weapon_raw).strip()
         self.badge_weapon.setText(weapon_raw.upper()); self.badge_gold.setText(f"{int(data['current_gold']):,} G")
         if name: self.smart_classify_weapon(name, level)
+
+    def log(self, text): pass # 로그 표시 제거됨
 
     def mousePressEvent(self, e):
         if e.button() == Qt.MouseButton.LeftButton: self._drag_pos = e.globalPosition().toPoint()
