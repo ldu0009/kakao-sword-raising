@@ -4,7 +4,7 @@ from PyQt6.QtGui import QPainter, QLinearGradient, QColor
 from core.config import Config
 
 class RunButton(QPushButton):
-    """'실행' 상태를 관리하는 핵심 액션 버튼 (Pretendard 적용)"""
+    """엔진 상태에 따라 유동적으로 변화하는 실행 버튼"""
     def __init__(self, parent=None):
         super().__init__("실행", parent)
         self.setFixedSize(140, 46)
@@ -20,18 +20,29 @@ class RunButton(QPushButton):
         self.update_style()
 
     @pyqtProperty(float)
-    def glint_pos(self): return self._glint_pos
-    @glint_pos.setter
-    def glint_pos(self, pos): self._glint_pos = pos; self.update()
+    def glint_pos(self):
+        return self._glint_pos
 
-    def update_style(self, active=False):
+    @glint_pos.setter
+    def glint_pos(self, pos):
+        self._glint_pos = pos
+        self.update()
+
+    def update_style(self):
         font_family = "'Pretendard Variable', Pretendard, 'Malgun Gothic', sans-serif"
         if self._is_running:
             self.setText("실행 중...")
-            self.setStyleSheet(f"QPushButton {{ background-color: #1A1C23; color: {Config.COLOR_ACCENT}; border-radius: 23px; font-weight: 800; font-size: 14px; border: 1px solid {Config.COLOR_ACCENT}; font-family: {font_family}; }}")
-        elif active:
-            self.setText("엔진 정지")
-            self.setStyleSheet(f"QPushButton {{ background-color: #222; color: {Config.COLOR_DANGER}; border-radius: 23px; font-weight: 800; font-size: 14px; border: 1px solid {Config.COLOR_DANGER}; font-family: {font_family}; }}")
+            self.setStyleSheet(f"""
+                QPushButton {{ 
+                    background-color: #1A1C23; 
+                    color: {Config.COLOR_ACCENT}; 
+                    border-radius: 23px; 
+                    font-weight: 800; 
+                    font-size: 14px; 
+                    border: 1px solid {Config.COLOR_ACCENT}; 
+                    font-family: {font_family}; 
+                }}
+            """)
         else:
             self.setText("실행")
             self.setStyleSheet(f"""
@@ -46,6 +57,7 @@ class RunButton(QPushButton):
                 }} 
                 QPushButton:hover {{ 
                     background-color: {Config.COLOR_ACCENT}; 
+                    color: #000;
                 }}
             """)
 
@@ -64,11 +76,11 @@ class RunButton(QPushButton):
 
     def start_running(self):
         self._is_running = True
-        self.update_style()
         self.animation.start()
+        self.update_style()
 
-    def stop_running(self, success=True):
+    def stop_running(self):
         self._is_running = False
         self.animation.stop()
+        self.update_style()
         self.setEnabled(True)
-        self.update_style(active=success)
